@@ -28,16 +28,26 @@ app.get("/", (req, res) => {
   res.send("hello world");
 });
 
+// io.use((socket, next) => {});
+
 io.on("connection", (socket) => {
   console.log("user connected");
   console.log("user id" + socket.id);
+
   socket.broadcast.emit("welcome", "welcome message sent");
+
   socket.on("disconnect", () => {
     console.log("user disconnected", socket.id);
   });
-  socket.on("message", (msg) => {
-    console.log("message: " + msg);
-    socket.broadcast.emit("recieve-data", msg.message);
+
+  socket.on("message-private", (msg) => {
+    socket.join(msg.room);
+    const payload = { message: msg.message, userName: msg.userName };
+    io.to(msg.room).emit("recieve-data", payload);
+  });
+
+  socket.on("create-room", (msg) => {
+    socket.join(msg.roomName);
   });
 });
 

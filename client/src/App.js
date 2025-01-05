@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from "react";
 import { io } from "socket.io-client";
-import { Button, Container, TextField, Typography } from "@mui/material";
 
 const App = () => {
   const [message, setMessage] = useState("");
@@ -8,12 +7,22 @@ const App = () => {
   const [room, setRoom] = useState("");
   const [socketId, setSocketId] = useState("");
   const [recieveMessages, setRecieveMessages] = useState([]);
+  const [roomName, setRoomName] = useState("");
+  const [userName, setUserName] = useState("");
 
   const handleSubmit = (e) => {
     e.preventDefault();
     if (socket) {
-      socket.emit("message", { message, room });
+      socket.emit("message-private", { userName, message, room });
       setMessage("");
+    }
+  };
+
+  const CreateRoomHandler = (e) => {
+    e.preventDefault();
+    if (socket) {
+      socket.emit("create-room", { roomName });
+      setRoomName("");
     }
   };
 
@@ -32,7 +41,8 @@ const App = () => {
     });
 
     newSocket.on("recieve-data", (msg) => {
-      setRecieveMessages([...recieveMessages, msg]);
+      console.log(msg);
+      setRecieveMessages((prevMessages) => [...prevMessages, msg]);
     });
 
     return () => {
@@ -42,53 +52,94 @@ const App = () => {
 
   if (!socket) {
     return (
-      <Container maxWidth="sm">
-        <Typography variant="h4" component="div" gutterBottom>
+      <div className="flex items-center justify-center h-screen bg-gray-900 text-neon-green">
+        <h1 className="text-3xl font-bold animate-pulse">
           Connecting to socket...
-        </Typography>
-      </Container>
+        </h1>
+      </div>
     );
   }
 
   return (
-    <Container maxWidth="sm">
-      <Typography variant="h4" component="div" gutterBottom>
-        Welcome to socket.io
-      </Typography>
+    <div className="min-h-screen bg-gray-900 text-neon-green flex flex-col items-center py-10 px-4">
+      <h1 className="text-4xl font-bold mb-4 neon-text text-center text-sky-50">
+        Realtime ChatApp using Socket.IO
+      </h1>
       {socketId && (
-        <Typography variant="h6" component="div" gutterBottom>
-          Socket ID: {socketId}
-        </Typography>
+        <p className="text-lg mb-6 bg-gray-800 px-4 py-2 text-sky-50 rounded-md shadow-lg">
+          🆔 Socket ID:{" "}
+          <span className="font-mono text-neon-pink">{socketId}</span>
+        </p>
       )}
-      <form onSubmit={handleSubmit} style={{ marginTop: "20px" }}>
-        <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
-          <TextField
+      <div className="flex w-[1200px] max-w-[90%] h-[100%] space-x-4 flex-wrap items-center justify-center">
+        <form
+          onSubmit={CreateRoomHandler}
+          className="w-full max-w-md bg-gray-800 h-[100%] p-6 rounded-lg shadow-lg mb-8"
+        >
+          <h2 className="text-xl mb-4 neon-text text-sky-50">Create Room</h2>
+          <input
+            value={roomName}
+            onChange={(e) => setRoomName(e.target.value)}
+            placeholder="Enter Room Name"
+            className="w-full p-2 mb-4 rounded-md bg-gray-700 text-white focus:outline-none focus:ring-2 focus:ring-neon-pink"
+          />
+          <button
+            type="submit"
+            className="w-full py-2 rounded-md bg-neon-pink text-white font-bold hover:bg-neon-purple transition-all"
+          >
+            Create Room
+          </button>
+        </form>
+
+        <form
+          onSubmit={handleSubmit}
+          className="w-full max-w-md bg-gray-800 p-6 rounded-lg shadow-lg"
+        >
+          <h2 className="text-xl mb-4 neon-text text-sky-50">Send Message</h2>
+          <input
+            value={userName}
+            onChange={(e) => setUserName(e.target.value)}
+            placeholder="Enter Your Name"
+            className="w-full p-2 mb-4 rounded-md bg-gray-700 text-white focus:outline-none focus:ring-2 focus:ring-neon-blue"
+          />
+          <input
             value={message}
             onChange={(e) => setMessage(e.target.value)}
-            id="outlined-basic"
-            label="Message"
-            variant="outlined"
+            placeholder="Enter Message"
+            className="w-full p-2 mb-4 rounded-md bg-gray-700 text-white focus:outline-none focus:ring-2 focus:ring-neon-blue"
           />
-          <TextField
+          <input
             value={room}
             onChange={(e) => setRoom(e.target.value)}
-            id="outlined-basic"
-            label="Room"
-            variant="outlined"
+            placeholder="Enter Room"
+            className="w-full p-2 mb-4 rounded-md bg-gray-700 text-white focus:outline-none focus:ring-2 focus:ring-neon-blue"
           />
-          <Button variant="contained" color="primary" type="submit">
-            Send
-          </Button>
-        </div>
-      </form>
-      <div style={{ marginTop: "20px" }}>
-        {recieveMessages.map((msg, index) => (
-          <Typography key={index} variant="body1" component="div" gutterBottom>
-            {msg}
-          </Typography>
-        ))}
+          <button
+            type="submit"
+            className="w-full py-2 rounded-md bg-neon-blue text-white font-bold hover:bg-neon-purple transition-all"
+          >
+            Send Message
+          </button>
+        </form>
       </div>
-    </Container>
+
+      <h2 className="mt-8 text-xl mb-4 neon-text text-sky-50 ">Messages</h2>
+      <div className=" w-full max-w-md p-4 bg-gray-800 rounded-lg shadow-md overflow-auto h-60">
+        <div className="space-y-2">
+          {recieveMessages.map((msg, index) => (
+            <div
+              key={index}
+              className="bg-gray-700 px-3 py-2 rounded-md shadow-md text-white"
+            >
+              <strong className="text-xs text-stone-400">
+                {msg.userName} :
+              </strong>
+              <p>{msg.message}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
   );
 };
 
